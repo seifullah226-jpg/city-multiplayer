@@ -21,7 +21,7 @@ io.on('connection', (socket) => {
     io.emit('update', players);
   });
 });
-
-server.listen(3000, () => {
-  console.log('Сервер запущен на порту 3000');
-});content://com.android.externalstorage.documents/tree/primary%3Acity-multiplayer%20::primary:city-multiplayer /server.js
+const PORT = process.env.PORT || 3000;
+    server.listen(PORT, () => {
+      console.log('Сервер запущен на порту', PORT);
+    });
