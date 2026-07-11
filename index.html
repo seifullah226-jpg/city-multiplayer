@@ -5,8 +5,6 @@
 <script>
 const socket = io("https://city-multiplayer.onrender.com");
 let otherPlayers = {};
-let distance = 0; // ДОБАВИЛ
-let raceActive = true; // ДОБАВИЛ
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -346,19 +344,14 @@ function renderCars() {
 }
 
 window.addEventListener('load', () => {
-  socket.on('update', (players) => { otherPlayers = players; }); // ДОБАВЬ ЭТО
-  socket.on('coinCollected', (coinId) => { coins = coins.filter(c => c.id!== coinId); }); // ДОБАВЬ ЭТО
-  socket.on('raceOver', (data) => { // ДОБАВЬ ЭТО
-    raceActive = false;
-    if(data.winner === socket.id) { totalCoins += 50; alert("ПОБЕДА! +50 монет"); } else { totalCoins += 10; alert("Финиш! +10 монет"); }
-    localStorage.setItem('racingTotalCoins', totalCoins);
-    setTimeout(() => { resetGame(); distance = 0; raceActive = true; }, 3000);
-  });
-
-  renderCars(); // а это уже было
+  renderCars();
   document.getElementById('shopCar2').classList.add('selected');
-  ...
+  document.getElementById('best').innerText = `Рекорд: ${bestScore}`;
+  document.getElementById('menuCoins').innerText = totalCoins;
+  initSounds();
+  draw();
 })
+
 function drawCarPreview(ctx, color) {
   ctx.clearRect(0,0,60,100);
   ctx.fillStyle = color;
@@ -428,7 +421,7 @@ function spawnObstacle() {
 
 function spawnCoin() {
   let x = roadX + Math.random() * (roadWidth - 20);
-  coins.push({x: x, y: -20, r: 10, id: 'coin' + Date.now() + Math.random()});
+  coins.push({x: x, y: -20, r: 10});
 }
 
 function addSmoke(x,y) { smoke.push({x:x, y:y, life:20}); }
@@ -536,28 +529,20 @@ function update() {
     }
   });
 
-  distance += speed; // ДОБАВИЛИ СЧЕТЧИК ДИСТАНЦИИ
-  document.getElementById('score').innerText = `Дистанция: ${Math.floor(distance)}/10000м`; // ПОМЕНЯЛИ НА ДИСТАНЦИЮ
-
-  if(distance >= 10000 && raceActive) { // ДОБАВИЛИ ПРОВЕРКУ ФИНИША
-    raceActive = false;
-    socket.emit('finish', {distance: distance}); 
-  }
-
-  socket.emit('move', {x: player.x, y: player.y, color: player.color, angle: isDrifting, distance: distance}); // ОБНОВЛЕННЫЙ EMIT
-
-if(shake > 0) {0
+  if(shake > 0) {
     canvas.style.transform = `translate(${Math.random()*shake - shake/2}px, ${Math.random()*shake - shake/2}px)`;
     shake *= 0.9;
   } else {
     canvas.style.transform = 'translate(0,0)';
   }
 
-  
+  document.getElementById('score').innerText = `Очки: ${score}`;
   document.getElementById('coins').innerText = `💰 ${coinsCollected}`;
   document.getElementById('speed').innerText = `${Math.floor(speed*10)} км/ч`;
   document.getElementById('best').innerText = `Рекорд: ${bestScore}`;
-  
+  socket.emit('move', {x: player.x, y: player.y, color: player.color, angle: isDrifting});
+}
+
 function draw() {
   if(timeOfDay === 'night') ctx.fillStyle = '#050510'; else ctx.fillStyle = weather === 'rain'? '#222' : '#444';
   ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -619,7 +604,9 @@ function draw() {
     ctx.fill();
   });
 
-  if(gameRunning) 
+  if(gameRunning) {
+    socket.on('update', (players) => { otherPlayers = players; });
+
   for(let id in otherPlayers){
     if(id!== socket.id){
       let p = otherPlayers[id];
