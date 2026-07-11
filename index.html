@@ -239,8 +239,19 @@ function update() {
   if(keys.right) player.x += steerSpeed;
 
   isDrifting = (keys.gas && (keys.left || keys.right));
-  if(isDrifting) { steerSpeed *= 1.4; driftTimer++; document.getElementById('driftScore').style.display = 'block'; if(driftTimer % 3 === 0) { addSmoke(player.x + 5, player.y + 70); addSmoke(player.x + 35, player.y + 70); } else { driftTimer = 0; document.getElementById('driftScore').style.display = 'none'; }
-
+  if(isDrifting) { 
+    steerSpeed *= 1.4; 
+    driftTimer++; 
+    document.getElementById('driftScore').style.display = 'block'; 
+    if(driftTimer % 3 === 0) { 
+      addSmoke(player.x + 5, player.y + 70); 
+      addSmoke(player.x + 35, player.y + 70); 
+    } 
+  } else { 
+    driftTimer = 0; 
+    document.getElementById('driftScore').style.display = 'none'; 
+  }
+  
   if(Math.abs(player.x - prevX) > 5) addSmoke(player.x + 20, player.y + 70);
   if(player.x < roadX) player.x = roadX;
   if(player.x > roadX + roadWidth - player.w) player.x = roadX + roadWidth - player.w;
