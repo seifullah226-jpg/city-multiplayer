@@ -5,10 +5,14 @@
 <script>
 const socket = io("https://city-multiplayer.onrender.com");
 let otherPlayers = {};
+let worldObstacles = [];
+let worldCoins = [];
+let distance = 0;
+let raceActive = true;
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Мобильные Гонки v10.6 CITY NIGHT</title>
+<title>Мобильные Гонки v10.7 CITY MULTIPLAYER</title>
 <style>
   body { margin:0; background:#000; overflow:hidden; font-family:'Arial', sans-serif; }
   canvas { background:#000; display:block; margin:0 auto; }
@@ -21,22 +25,22 @@ let otherPlayers = {};
   @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
   #nitroBar { position:absolute; top:50px; left:15px; width:150px; height:15px; background:#333; border-radius:10px; z-index:50; border:1px solid #0ff; }
   #nitroFill { height:100%; width:100%; background:linear-gradient(90deg, #00f, #0ff); border-radius:10px; transition:width 0.1s; box-shadow:0 0 10px #0ff; }
-  .btn { position:absolute; bottom:30px; width:70px; height:70px; background:rgba(255,255,255,0.2); border:3px solid white; border-radius:50%; color:white; font-size:28px; user-select:none; touch-action:none; z-index:50; }
+ .btn { position:absolute; bottom:30px; width:70px; height:70px; background:rgba(255,255,255,0.2); border:3px solid white; border-radius:50%; color:white; font-size:28px; user-select:none; touch-action:none; z-index:50; }
   #left { left:3%; } #right { right:3%; } #gas { right:20%; background:rgba(0,255,0,0.3); } #brake { left:20%; background:rgba(255,0,0,0.3); } #nitro { bottom:110px; right:3%; background:rgba(0,100,255,0.4); font-size:16px; }
-  .btn:active { transform:scale(0.9); }
+ .btn:active { transform:scale(0.9); }
   #menu, #gameOverScreen, #shop, #leaderboard { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); display:flex; flex-direction:column; justify-content:flex-start; padding-top:20px; align-items:center; color:white; z-index:100; overflow-y:auto; }
-  .carChoice { width:60px; height:100px; margin:10px; border:3px solid white; cursor:pointer; display:inline-block; position:relative; background:#111; }
-  .carChoice.selected { border-color:#0f0; box-shadow:0 0 15px #0f0; }
-  .carChoice.locked { filter:grayscale(1); opacity:0.5; }
-  .carName { font-size:12px; text-align:center; margin-top:5px; }
-  .carRow { display:flex; justify-content:center; gap:15px; margin:10px 0; flex-wrap:wrap; }
-  .diffBtn { padding:15px 40px; font-size:20px; margin:10px; border:none; border-radius:10px; cursor:pointer; }
+ .carChoice { width:60px; height:100px; margin:10px; border:3px solid white; cursor:pointer; display:inline-block; position:relative; background:#111; }
+ .carChoice.selected { border-color:#0f0; box-shadow:0 0 15px #0f0; }
+ .carChoice.locked { filter:grayscale(1); opacity:0.5; }
+ .carName { font-size:12px; text-align:center; margin-top:5px; }
+ .carRow { display:flex; justify-content:center; gap:15px; margin:10px 0; flex-wrap:wrap; }
+ .diffBtn { padding:15px 40px; font-size:20px; margin:10px; border:none; border-radius:10px; cursor:pointer; }
   #restartBtn, #shopBtn, #backBtn, #leaderBtn { padding:15px 30px; font-size:18px; background:#0f0; border:none; border-radius:10px; margin:10px; cursor:pointer; }
-  .upgrade { background:#222; padding:15px; margin:10px; border-radius:10px; width:80%; max-width:400px; display:flex; justify-content:space-between; align-items:center; }
-  .upgrade button { padding:10px 20px; background:#ffd700; border:none; border-radius:8px; font-weight:bold; cursor:pointer; }
-  .upgrade button:disabled { background:#555; color:#999; }
+ .upgrade { background:#222; padding:15px; margin:10px; border-radius:10px; width:80%; max-width:400px; display:flex; justify-content:space-between; align-items:center; }
+ .upgrade button { padding:10px 20px; background:#ffd700; border:none; border-radius:8px; font-weight:bold; cursor:pointer; }
+ .upgrade button:disabled { background:#555; color:#999; }
   #currentCar { font-size:18px; color:#0ff; margin-bottom:10px; }
-  .leaderItem { background:#222; padding:10px; margin:5px; border-radius:8px; width:80%; display:flex; justify-content:space-between; }
+ .leaderItem { background:#222; padding:10px; margin:5px; border-radius:8px; width:80%; display:flex; justify-content:space-between; }
   #weatherBtn { position:absolute; top:90px; right:15px; padding:5px 10px; background:#555; border:none; color:white; border-radius:8px; z-index:50; }
   #timeBtn { position:absolute; top:120px; right:15px; padding:5px 10px; background:#555; border:none; color:white; border-radius:8px; z-index:50; }
   #weatherBtn.active, #timeBtn.active { background:#0a0; }
@@ -91,7 +95,7 @@ let otherPlayers = {};
 </div>
 
 <div id="ui">
-  <div id="score">Очки: 0</div>
+  <div id="score">Дистанция: 0/10000м</div>
   <div id="coins">💰 0</div>
   <div id="best">Рекорд: 0</div>
   <div id="speed">0 км/ч</div>
@@ -106,14 +110,8 @@ let otherPlayers = {};
 <button class="btn" id="right">→</button>
 <button class="btn" id="gas">↑</button>
 <button class="btn" id="nitro">NITRO</button>
-<script>
-const socket = io("https://city-multiplayer.onrender.com");
-let otherPlayers = {};
-let worldObstacles = [];
-let worldCoins = [];
-let distance = 0; // 1. ДОБАВИЛИ ДИСТАНЦИЮ
-let raceActive = true;
 
+<script>
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
@@ -146,8 +144,7 @@ let keys = {left: false, right: false, gas: false, brake: false, nitro: false};
 let roadOffset = 0, speed = 5, nitro = 100;
 let isDrifting = false, driftTimer = 0, shake = 0;
 
-// ВСЕ ТВОИ ФУНКЦИИ ЗВУКОВ, МАГАЗИНА, МАШИН ОСТАЮТСЯ ТАКИМИ ЖЕ
-//... я их не трогаю чтобы ничего не сломать...
+// ЗВУКИ
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 let engineSound, engineGain;
 function initSounds() { engineSound = audioCtx.createOscillator(); engineSound.type = 'sawtooth'; engineSound.frequency.value = 100; engineGain = audioCtx.createGain(); engineGain.connect(audioCtx.destination); engineGain.gain.value = 0; engineSound.connect(engineGain); engineSound.start(); }
@@ -156,9 +153,19 @@ function stopSounds() { engineGain.gain.value = 0; }
 function playCoinSound() { const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.frequency.value = 800; gain.gain.value = 0.1; osc.connect(gain).connect(audioCtx.destination); osc.start(); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2); osc.stop(audioCtx.currentTime + 0.2); }
 function screenShake(intensity) { shake = intensity; }
 
+// ГОРОД
 for(let i=0; i<20; i++){ buildings.push({ x: Math.random() < 0.5? roadX - 100 - Math.random()*50 : roadX + roadWidth + Math.random()*50, y: -200 - i*100, w: 80 + Math.random()*40, h: 200 + Math.random()*200, color: `hsl(${Math.random()*360}, 100%, 50%)` }) }
-const diffSettings = { easy: { spawnRate: 0.005, maxSpeed: 12, coinRate: 0.008 }, normal: { spawnRate: 0.01, maxSpeed: 15, coinRate: 0.015 }, hard: { spawnRate: 0.02, maxSpeed: 18, coinRate: 0.025 } };
-const carStats = { car1: {name: 'Красная', color: 'red', baseSpeed: 18, baseSteer: 10, price: 0}, car2: {name: 'Синяя', color: 'blue', baseSpeed: 20, baseSteer: 7, price: 0}, car3: {name: 'Зелёная', color: 'lime', baseSpeed: 16, baseSteer: 14, price: 0}, car4: {name: 'Золотая', color: 'gold', baseSpeed: 25, baseSteer: 12, price: 1000}, car5: {name: 'Чёрная', color: 'black', baseSpeed: 22, baseSteer: 16, price: 1500} };
+
+const diffSettings = { easy: { maxSpeed: 12 }, normal: { maxSpeed: 15 }, hard: { maxSpeed: 18 } };
+
+const carStats = {
+  car1: {name: 'Красная', color: 'red', baseSpeed: 18, baseSteer: 10, price: 0},
+  car2: {name: 'Синяя', color: 'blue', baseSpeed: 20, baseSteer: 7, price: 0},
+  car3: {name: 'Зелёная', color: 'lime', baseSpeed: 16, baseSteer: 14, price: 0},
+  car4: {name: 'Золотая', color: 'gold', baseSpeed: 25, baseSteer: 12, price: 1000},
+  car5: {name: 'Чёрная', color: 'black', baseSpeed: 22, baseSteer: 16, price: 1500}
+};
+
 function getUpgradeCost(level) { return 50 + (level - 1) * 25; }
 function getCurrentUpgrades() { return allUpgrades[carForUpgrade]; }
 function applyUpgrades() { let upgrades = allUpgrades[selectedCar]; player.maxSpeed = carStats[selectedCar].baseSpeed + upgrades.engine; player.steer = carStats[selectedCar].baseSteer + upgrades.steer; player.maxNitro = player.baseNitro + upgrades.nitro * 20; nitro = player.maxNitro; }
@@ -173,31 +180,40 @@ function updateShopUI() { let upgrades = getCurrentUpgrades(); document.getEleme
 function buyUpgrade(type) { let upgrades = getCurrentUpgrades(); let cost = getUpgradeCost(upgrades[type]); if(totalCoins >= cost) { totalCoins -= cost; upgrades[type]++; localStorage.setItem('racingAllUpgrades', JSON.stringify(allUpgrades)); localStorage.setItem('racingTotalCoins', totalCoins); updateShopUI(); } }
 function toggleWeather() { weather = weather === 'clear'? 'rain' : 'clear'; let btn = document.getElementById('weatherBtn'); btn.innerText = weather === 'rain'? '☀️ Ясно' : '🌧️ Дождь'; btn.classList.toggle('active', weather === 'rain'); }
 function toggleTime() { timeOfDay = timeOfDay === 'day'? 'night' : 'day'; let btn = document.getElementById('timeBtn'); btn.innerText = timeOfDay === 'night'? '🌙 Ночь' : '☀️ День'; btn.classList.toggle('active', timeOfDay === 'night'); }
-function setDifficulty(d) { gameRunning = true; raceActive = true; distance = 0; resetKeys(); difficulty = d; applyUpgrades(); resetGame(); document.getElementById('menu').style.display = 'none'; document.getElementById('best').innerText = `Рекорд: ${bestScore}`; startSounds(); loop(); }
+
+function setDifficulty(d) {
+  gameRunning = true; raceActive = true; distance = 0;
+  resetKeys();
+  difficulty = d;
+  applyUpgrades();
+  resetGame();
+  document.getElementById('menu').style.display = 'none';
+  document.getElementById('best').innerText = `Рекорд: ${bestScore}`;
+  startSounds();
+  loop();
+}
+
 function resetGame() { score = 0; coinsCollected = 0; speed = 5; player.x = canvas.width/2 - 20; gameOver = false; shake = 0; canvas.style.transform = 'translate(0,0)'; }
 function resetKeys() { keys = {left: false, right: false, gas: false, brake: false, nitro: false}; }
+
 function renderCars() { let menuDiv = document.getElementById('menuCars'); let shopDiv = document.getElementById('shopCars'); menuDiv.innerHTML = ''; shopDiv.innerHTML = ''; Object.keys(carStats).forEach(id => { let owned = ownedCars.includes(id); menuDiv.innerHTML += `<div><canvas class="carChoice ${owned?'':'locked'}" id="${id}" width="60" height="100"></canvas><div class="carName">${carStats[id].name} ${owned?'':carStats[id].price+'💰'}</div></div>`; shopDiv.innerHTML += `<div><canvas class="carChoice ${owned?'':'locked'}" id="shop${id.charAt(0).toUpperCase() + id.slice(1)}" width="60" height="100" onclick="selectCarForUpgrade('${id}')"></canvas></div>`; }); setTimeout(() => { document.querySelectorAll('.carChoice[id^="car"]').forEach(c => { drawCarPreview(c.getContext('2d'), carStats[c.id].color); c.addEventListener('click', () => { if(!ownedCars.includes(c.id)) { buyCar(c.id); return; } selectedCar = c.id; player.color = carStats[c.id].color; player.baseSpeed = carStats[c.id].baseSpeed; player.baseSteer = carStats[c.id].baseSteer; document.querySelectorAll('.carChoice').forEach(x => x.classList.remove('selected')); c.classList.add('selected'); }); Object.keys(carStats).forEach(id => drawCarPreview(document.getElementById('shop' + id.charAt(0).toUpperCase() + id.slice(1)).getContext('2d'), carStats[id].color)); document.getElementById('car2').classList.add('selected'); }, 50); }
+
 window.addEventListener('load', () => { renderCars(); document.getElementById('shopCar2').classList.add('selected'); document.getElementById('best').innerText = `Рекорд: ${bestScore}`; document.getElementById('menuCoins').innerText = totalCoins; initSounds(); draw() })
 function drawCarPreview(ctx, color) { ctx.clearRect(0,0,60,100); ctx.fillStyle = color; ctx.fillRect(10, 10, 40, 70); ctx.fillStyle = '#87CEEB'; ctx.fillRect(15, 20, 30, 15); ctx.fillRect(15, 50, 30, 15); ctx.fillStyle = '#333'; ctx.fillRect(5, 25, 5, 20); ctx.fillRect(50, 25, 5, 20); ctx.fillStyle = '#222'; ctx.fillRect(12, 75, 8, 10); ctx.fillRect(40, 75, 8, 10); }
+
 function setKey(key, val, e) { if(!gameRunning) return; keys[key] = val; if(e) e.preventDefault(); }
 ['left','right','gas','brake','nitro'].forEach(side => { const btn = document.getElementById(side); btn.addEventListener('touchstart', (e) => setKey(side,true,e)); btn.addEventListener('touchend', (e) => setKey(side,false,e)); });
 
-// 2. СОКЕТЫ - ЛОВИМ ДАННЫЕ СЕРВЕРА
+// СОКЕТЫ
 socket.on('world', (data) => { worldObstacles = data.obstacles; worldCoins = data.coins; });
 socket.on('worldUpdate', (data) => { worldObstacles = data.obstacles; worldCoins = data.coins; });
 socket.on('update', (players) => { otherPlayers = players; });
 socket.on('coinCollected', (coinId) => { worldCoins = worldCoins.filter(c => c.id!== coinId); });
 socket.on('raceOver', (data) => {
   raceActive = false;
-  if(data.winner === socket.id) {
-    totalCoins += 50;
-    alert("ПОБЕДА! +50 монет");
-  } else {
-    totalCoins += 10;
-    alert("Финиш! +10 монет");
-  }
+  if(data.winner === socket.id) { totalCoins += 50; alert("ПОБЕДА! +50 монет"); } else { totalCoins += 10; alert("Финиш! +10 монет"); }
   localStorage.setItem('racingTotalCoins', totalCoins);
-  setTimeout(() => { setDifficulty(difficulty) }, 3000); // новая гонка через 3 сек
+  setTimeout(() => { setDifficulty(difficulty) }, 3000);
 });
 socket.on('newRace', (data) => { worldObstacles = data.obstacles; worldCoins = data.coins; distance = 0; raceActive = true; });
 
@@ -212,11 +228,11 @@ function endGame() {
   gameOver = true;
   totalCoins += coinsCollected;
   localStorage.setItem('racingTotalCoins', totalCoins);
-  leaderboard.push({score:score, date:new Date().toLocaleDateString()});
+  leaderboard.push({score:Math.floor(distance), date:new Date().toLocaleDateString()});
   localStorage.setItem('racingLeaderboard', JSON.stringify(leaderboard));
-  document.getElementById('finalScore').innerText = `Очки: ${score}`;
+  document.getElementById('finalScore').innerText = `Дистанция: ${Math.floor(distance)}м`;
   document.getElementById('finalCoins').innerText = `+${coinsCollected} монет`;
-  if(score > bestScore) { bestScore = score; localStorage.setItem('racingBest', bestScore); document.getElementById('newRecord').style.display = 'block'; }
+  if(distance > bestScore) { bestScore = distance; localStorage.setItem('racingBest', bestScore); document.getElementById('newRecord').style.display = 'block'; }
   setTimeout(() => { document.getElementById('gameOverScreen').style.display = 'flex'; }, 500);
 }
 
@@ -239,19 +255,8 @@ function update() {
   if(keys.right) player.x += steerSpeed;
 
   isDrifting = (keys.gas && (keys.left || keys.right));
-  if(isDrifting) { 
-    steerSpeed *= 1.4; 
-    driftTimer++; 
-    document.getElementById('driftScore').style.display = 'block'; 
-    if(driftTimer % 3 === 0) { 
-      addSmoke(player.x + 5, player.y + 70); 
-      addSmoke(player.x + 35, player.y + 70); 
-    } 
-  } else { 
-    driftTimer = 0; 
-    document.getElementById('driftScore').style.display = 'none'; 
-  }
-  
+  if(isDrifting) { steerSpeed *= 1.4; driftTimer++; document.getElementById('driftScore').style.display = 'block'; if(driftTimer % 3 === 0) { addSmoke(player.x + 5, player.y + 70); addSmoke(player.x + 35, player.y + 70); } } else { driftTimer = 0; document.getElementById('driftScore').style.display = 'none'; }
+
   if(Math.abs(player.x - prevX) > 5) addSmoke(player.x + 20, player.y + 70);
   if(player.x < roadX) player.x = roadX;
   if(player.x > roadX + roadWidth - player.w) player.x = roadX + roadWidth - player.w;
@@ -262,13 +267,12 @@ function update() {
 
   addRain();
 
-  // 3. ТЕПЕРЬ МОНЕТЫ ОБЩИЕ
   worldCoins.forEach((c,i) => {
     c.y += speed;
     let dx = player.x + 20 - c.x;
     let dy = player.y + 35 - c.y;
     if(Math.sqrt(dx*dx + dy*dy) < c.r + 20) {
-      socket.emit('collectCoin', c.id); // Говорим серверу что собрали
+      socket.emit('collectCoin', c.id);
       coinsCollected++;
       playCoinSound();
       let points = isDrifting? 200 : 100;
@@ -279,14 +283,12 @@ function update() {
   smoke.forEach((s,i) => { s.y += 2; s.life--; if(s.life <= 0) smoke.splice(i,1); });
   rain.forEach((r,i) => { r.y += r.speed; if(r.y > canvas.height) rain.splice(i,1); });
 
-  // 4. ПРОВЕРКА СТОЛКНОВЕНИЯ С ОБЩИМИ МАШИНАМИ
   worldObstacles.forEach((o,i) => {
     if(player.x < o.x + o.w && player.x + player.w > o.x && player.y < o.y + o.h && player.y + player.h > o.y) {
       endGame();
     }
   });
 
-  // 5. СЧИТАЕМ ДИСТАНЦИЮ ДЛЯ ФИНИША
   distance += speed;
   document.getElementById('score').innerText = `Дистанция: ${Math.floor(distance)}/10000м`;
   socket.emit('move', {x: player.x, y: player.y, color: player.color, angle: isDrifting, distance: distance, coins: coinsCollected});
@@ -295,29 +297,23 @@ function update() {
 
   document.getElementById('coins').innerText = `💰 ${coinsCollected}`;
   document.getElementById('speed').innerText = `${Math.floor(speed*10)} км/ч`;
-  document.getElementById('best').innerText = `Рекорд: ${bestScore}`;
+  document.getElementById('best').innerText = `Рекорд: ${Math.floor(bestScore)}м`;
 }
 
 function draw() {
   if(timeOfDay === 'night') ctx.fillStyle = '#050510'; else ctx.fillStyle = weather === 'rain'? '#222' : '#444';
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  buildings.forEach(b => { ctx.fillStyle = '#111'; ctx.fillRect(b.x, b.y, b.w, b.h); for(let wy = b.y+10; wy < b.y+b.h-10; wy+=20){ for(let wx = b.x+10; wx < b.x+b.w-10; wx+=15){ if(timeOfDay === 'night' && Math.random() > 0.5){ ctx.fillStyle = b.color; ctx.shadowBlur = 15; ctx.shadowColor = b.color; ctx.fillRect(wx, wy, 8, 12); ctx.shadowBlur = 0; } });
+  buildings.forEach(b => { ctx.fillStyle = '#111'; ctx.fillRect(b.x, b.y, b.w, b.h); for(let wy = b.y+10; wy < b.y+b.h-10; wy+=20){ for(let wx = b.x+10; wx < b.x+b.w-10; wx+=15){ if(timeOfDay === 'night' && Math.random() > 0.5){ ctx.fillStyle = b.color; ctx.shadowBlur = 15; ctx.shadowColor = b.color; ctx.fillRect(wx, wy, 8, 12); ctx.shadowBlur = 0; } } });
   ctx.fillStyle = timeOfDay === 'night'? '#1a1a2e' : '#444'; ctx.fillRect(roadX,0,roadWidth,canvas.height);
   if(timeOfDay === 'night' && weather === 'rain'){ ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fillRect(roadX,0,roadWidth,canvas.height); }
-  ctx.fillStyle = timeOfDay === 'night'? '#ff0' : 'white'; ctx.shadowBlur = timeOfDay === 'night'? 10 : 0; ctx.shadowColor = '#ff0'; let laneWidth = roadWidth / LANES; for(let i = 1; i < LANES; i++){ let x = roadX + laneWidth * i - 2; for(let y = -40 + roadOffset; y < canvas.height; y += 40){ ctx.fillRect(x, y, 4, 20); } ctx.shadowBlur = 0;
+  ctx.fillStyle = timeOfDay === 'night'? '#ff0' : 'white'; ctx.shadowBlur = timeOfDay === 'night'? 10 : 0; ctx.shadowColor = '#ff0'; let laneWidth = roadWidth / LANES; for(let i = 1; i < LANES; i++){ let x = roadX + laneWidth * i - 2; for(let y = -40 + roadOffset; y < canvas.height; y += 40){ ctx.fillRect(x, y, 4, 20); } } ctx.shadowBlur = 0;
   ctx.fillStyle = 'rgba(200,200,255,0.7)'; rain.forEach(r => ctx.fillRect(r.x, r.y, 2, 10));
-
-  ctx.fillStyle = 'gold';
-  worldCoins.forEach(c => { ctx.beginPath(); ctx.arc(c.x, c.y, c.r, 0, Math.PI*2); ctx.fill(); ctx.fillStyle='white'; ctx.font='16px Arial'; ctx.fillText('$', c.x-5, c.y+5); ctx.fillStyle='gold'; });
-
+  ctx.fillStyle = 'gold'; worldCoins.forEach(c => { ctx.beginPath(); ctx.arc(c.x, c.y, c.r, 0, Math.PI*2); ctx.fill(); ctx.fillStyle='white'; ctx.font='16px Arial'; ctx.fillText('$', c.x-5, c.y+5); ctx.fillStyle='gold'; });
   ctx.fillStyle = 'rgba(200,200,200,0.5)'; smoke.forEach(s => { ctx.beginPath(); ctx.arc(s.x, s.y, 20-s.life/2, 0, Math.PI*2); ctx.fill(); });
 
   if(gameRunning) {
-    // РИСУЕМ ОБЩИХ БОТОВ
     worldObstacles.forEach(o => drawCar(o.x, o.y, o.color));
-    // РИСУЕМ ДРУГИХ ИГРОКОВ
     for(let id in otherPlayers){ if(id!== socket.id){ let p = otherPlayers[id]; drawCar(p.x, p.y, p.color); } }
-    // РИСУЕМ СЕБЯ
     drawCar(player.x, player.y, player.color);
   }
 }
