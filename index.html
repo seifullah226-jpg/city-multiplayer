@@ -3,16 +3,12 @@
 <head>
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
-const socket = io("https://city-multiplayer.onrender.com");
+let socket;
 let otherPlayers = {};
 let worldObstacles = [];
 let worldCoins = [];
 let distance = 0;
 let raceActive = true;
-
-socket.on('connect', () => { 
-  console.log("Подключился к серверу", socket.id) 
-});
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -325,6 +321,34 @@ function draw() {
 function drawCar(x, y, color) { ctx.save(); if(x === player.x && isDrifting) { let angle = keys.left? -0.12 : 0.12; ctx.translate(x + 20, y + 35); ctx.rotate(angle); ctx.translate(-(x + 20), -(y + 35)); } ctx.fillStyle = color; ctx.fillRect(x, y, 40, 70); ctx.fillStyle = '#87CEEB'; ctx.fillRect(x+5, y+10, 30, 15); ctx.fillRect(x+5, y+45, 30, 15); if(keys.nitro && x === player.x) { ctx.fillStyle = 'orange'; ctx.fillRect(x+5, y+70, 10, 15); ctx.fillRect(x+25, y+70, 10, 15); } ctx.restore(); if(timeOfDay === 'night') { ctx.fillStyle = '#ffffff'; ctx.shadowBlur = 30; ctx.shadowColor = '#ffffff'; ctx.fillRect(x+3, y-1, 9, 5); ctx.fillRect(x+28, y-1, 9, 5); ctx.shadowBlur = 0; } }
 
 function loop() { if(!gameRunning) return; update(); draw(); requestAnimationFrame(loop); }
+
+                       // ПОДКЛЮЧАЕМСЯ К СЕРВЕРУ ПОСЛЕ ЗАГРУЗКИ
+window.addEventListener('load', () => {
+  socket = io("https://city-multiplayer.onrender.com");
+  console.log("Подключаемся...");
+  
+  socket.on('connect', () => { console.log("Подключился к серверу", socket.id) });
+  socket.on('world', (data) => { worldObstacles = data.obstacles; worldCoins = data.coins; });
+  socket.on('worldUpdate', (data) => { worldObstacles = data.obstacles; worldCoins = data.coins; });
+  socket.on('update', (players) => { otherPlayers = players; });
+  socket.on('coinCollected', (coinId) => { worldCoins = worldCoins.filter(c => c.id!== coinId); });
+  socket.on('raceOver', (data) => {
+    raceActive = false;
+    if(data.winner === socket.id) { totalCoins += 50; alert("ПОБЕДА! +50 монет"); } else { totalCoins += 10; alert("Финиш! +10 монет"); }
+    localStorage.setItem('racingTotalCoins', totalCoins);
+    setTimeout(() => { setDifficulty(difficulty) }, 3000);
+  });
+  socket.on('newRace', (data) => { worldObstacles = data.obstacles; worldCoins = data.coins; distance = 0; raceActive = true; });
+  
+  // ЗАПУСК ИГРЫ
+  renderCars();
+  document.getElementById('shopCar2').classList.add('selected');
+  document.getElementById('best').innerText = `Рекорд: ${bestScore}`;
+  document.getElementById('menuCoins').innerText = totalCoins;
+  initSounds();
+  draw();
+});
+
 </script>
 </body>
 </html>
