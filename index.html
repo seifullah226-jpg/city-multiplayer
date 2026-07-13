@@ -118,6 +118,10 @@ const roadX = (canvas.width - roadWidth) / 2;
 const LANES = 5;
 
 let player = { x: canvas.width/2 - 20, y: canvas.height - 120, w: 40, h: 70, color: 'blue', baseSpeed: 20, baseSteer: 7, baseNitro: 100 };
+player.x = canvas.width / 2 - 15;
+player.y = canvas.height - 80;
+player.width = 30;
+player.height = 50;
 let selectedCar = 'car2';
 let carForUpgrade = 'car2';
 
@@ -561,6 +565,8 @@ function update() {
   document.getElementById('speed').innerText = `${Math.floor(speed*10)} км/ч`;
   document.getElementById('best').innerText = `Рекорд: ${bestScore}`;
   socket.emit('move', {x: player.x, y: player.y, color: player.color, angle: isDrifting});
+  // ЭТО В САМЫЙ КОНЕЦ update()
+    requestAnimationFrame(update);
 }
 
 function draw() {
@@ -636,6 +642,11 @@ function draw() {
     drawCar(player.x, player.y, player.color);
     obstacles.forEach(o => drawCar(o.x, o.y, o.color));
   }
+  // РИСУЕМ СВОЮ МАШИНУ ПОВЕРХ ВСЕГО
+  ctx.fillStyle = '#ff0000'; 
+  ctx.fillRect(player.x, player.y, player.width, player.height);
+  ctx.fillStyle = '#000';
+  ctx.fillRect(player.x + 8, player.y + 8, 14, 14); // стекло
 }
 
 function drawCar(x, y, color) {
