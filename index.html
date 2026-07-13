@@ -96,6 +96,7 @@ let otherPlayers = {};
   <div id="best">Рекорд: 0</div>
   <div id="speed">0 км/ч</div>
 </div>
+  
 <div id="driftScore">DRIFT x2 🔥</div>
 <button id="weatherBtn" onclick="toggleWeather()">🌧️ Дождь</button>
 <button id="timeBtn" onclick="toggleTime()">☀️ День</button>
@@ -454,6 +455,17 @@ document.getElementById('restartBtn').onclick = () => {
 };
 
 function update() {
+  // СЧЕТЧИК ДИСТАНЦИИ
+  distance += speed;
+  document.getElementById('score').innerText = `Дистанция: ${Math.floor(distance)}/10000м`;
+
+// ПРОВЕРКА ФИНИША
+  if(distance >= 10000 && raceActive){
+    raceActive = false;
+    coins += 50;
+    alert(`ПОБЕДА! +50 монет`);
+    socket.emit('finish', {distance: distance});
+  }
   if(!gameRunning) return;
   if(engineGain) engineGain.gain.value = 0.03 + speed / 300;
   if(engineSound) engineSound.frequency.value = 100 + speed * 10;
