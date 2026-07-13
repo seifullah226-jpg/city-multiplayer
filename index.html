@@ -144,6 +144,9 @@ let gameOver = false, difficulty = 'normal', gameRunning = false, weather = 'cle
 let keys = {left: false, right: false, gas: false, brake: false, nitro: false};
 let roadOffset = 0, speed = 5, nitro = 100;
 let isDrifting = false, driftTimer = 0, shake = 0;
+let keys = {};
+document.addEventListener('keydown', e => keys[e.key] = true);
+document.addEventListener('keyup', e => keys[e.key] = false);
 
 // ЗВУКИ v10.6 БЕЗ ДРИФТА
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -459,8 +462,16 @@ document.getElementById('restartBtn').onclick = () => {
 };
 
 function update() {
-  player.width = 30;
-  player.height = 50;
+        // ДВИЖЕНИЕ
+  if(keys['ArrowLeft'] || keys['a']) player.x -= 5;
+  if(keys['ArrowRight'] || keys['d']) player.x += 5;
+  if(keys['ArrowUp'] || keys['w']) player.y -= 5;
+  if(keys['ArrowDown'] || keys['s']) player.y += 5;
+        
+     player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+     player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
+
+        
   // СЧЕТЧИК ДИСТАНЦИИ
   distance += speed;
   document.getElementById('score').innerText = `Дистанция: ${Math.floor(distance)}/10000м`;
@@ -685,7 +696,17 @@ function loop() {
   draw();
   requestAnimationFrame(loop);
 }
-
+    // УПРАВЛЕНИЕ ПАЛЬЦЕМ НА ТЕЛЕФОНЕ
+let touchX = null;
+  canvas.addEventListener('touchstart', e => touchX = e.touches[0].clientX);
+  canvas.addEventListener('touchmove', e => {
+    if(touchX!== null){
+          let diff = e.touches[0].clientX - touchX;
+          player.x += diff * 0.2;
+          touchX = e.touches[0].clientX;
+    }
+});
+canvas.addEventListener('touchend', () => touchX = null);
 </script>
 </body>
 </html>
