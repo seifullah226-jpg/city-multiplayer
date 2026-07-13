@@ -545,8 +545,7 @@ function update() {
   document.getElementById('coins').innerText = `💰 ${coinsCollected}`;
   document.getElementById('speed').innerText = `${Math.floor(speed*10)} км/ч`;
   document.getElementById('best').innerText = `Рекорд: ${bestScore}`;
-  document.getElementById('progressBar').style.width = (distance / FINISH_DISTANCE * 100) + '%';
-  socket.emit('move', {x: player.x, y: player.y, color: player.color, angle: isDrifting});
+  //document.getElementById('progressBar').style.width = (distance / FINISH_DISTANCE * 100) + '%';
   if(distance >= FINISH_DISTANCE){
     alert("ФИНИШ! ПОБЕДА НА 10000км!");
     gameOver = true;
