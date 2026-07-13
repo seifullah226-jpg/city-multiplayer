@@ -91,12 +91,11 @@ let otherPlayers = {};
 </div>
 
 <div id="ui">
-  <div id="score">Дистанция: 0/10000м</div>
+  <div id="score">Очки: 0</div>
   <div id="coins">💰 0</div>
   <div id="best">Рекорд: 0</div>
   <div id="speed">0 км/ч</div>
 </div>
-  
 <div id="driftScore">DRIFT x2 🔥</div>
 <button id="weatherBtn" onclick="toggleWeather()">🌧️ Дождь</button>
 <button id="timeBtn" onclick="toggleTime()">☀️ День</button>
@@ -118,10 +117,6 @@ const roadX = (canvas.width - roadWidth) / 2;
 const LANES = 5;
 
 let player = { x: canvas.width/2 - 20, y: canvas.height - 120, w: 40, h: 70, color: 'blue', baseSpeed: 20, baseSteer: 7, baseNitro: 100 };
-player.x = canvas.width / 2 - 15;
-player.y = canvas.height - 80;
-player.width = 30;
-player.height = 50;
 let selectedCar = 'car2';
 let carForUpgrade = 'car2';
 
@@ -144,9 +139,6 @@ let gameOver = false, difficulty = 'normal', gameRunning = false, weather = 'cle
 let keys = {left: false, right: false, gas: false, brake: false, nitro: false};
 let roadOffset = 0, speed = 5, nitro = 100;
 let isDrifting = false, driftTimer = 0, shake = 0;
-let keys = {};
-document.addEventListener('keydown', e => keys[e.key] = true);
-document.addEventListener('keyup', e => keys[e.key] = false);
 
 // ЗВУКИ v10.6 БЕЗ ДРИФТА
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -462,33 +454,6 @@ document.getElementById('restartBtn').onclick = () => {
 };
 
 function update() {
-        // ДВИЖЕНИЕ
-  if(keys['ArrowLeft'] || keys['a']) player.x -= 5;
-  if(keys['ArrowRight'] || keys['d']) player.x += 5;
-  if(keys['ArrowUp'] || keys['w']) player.y -= 5;
-  if(keys['ArrowDown'] || keys['s']) player.y += 5;
-        
-     player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
-     player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
-
-        
-  // СЧЕТЧИК ДИСТАНЦИИ
-  distance += speed;
-  document.getElementById('score').innerText = `Дистанция: ${Math.floor(distance)}/10000м`;
-
-// РИСУЕМ СВОЮ МАШИНУ
-  ctx.fillStyle = '#ff0000'; // красный цвет
-  ctx.fillRect(player.x, player.y, player.width, player.height);
-  ctx.fillStyle = '#000';
-  ctx.fillRect(player.x + 5, player.y + 5, 10, 10); // "окно"
-
-// ПРОВЕРКА ФИНИША
-  if(distance >= 10000 && raceActive){
-    raceActive = false;
-    coins += 50;
-    alert(`ПОБЕДА! +50 монет`);
-    socket.emit('finish', {distance: distance});
-  }
   if(!gameRunning) return;
   if(engineGain) engineGain.gain.value = 0.03 + speed / 300;
   if(engineSound) engineSound.frequency.value = 100 + speed * 10;
@@ -576,8 +541,6 @@ function update() {
   document.getElementById('speed').innerText = `${Math.floor(speed*10)} км/ч`;
   document.getElementById('best').innerText = `Рекорд: ${bestScore}`;
   socket.emit('move', {x: player.x, y: player.y, color: player.color, angle: isDrifting});
-  // ЭТО В САМЫЙ КОНЕЦ update()
-    requestAnimationFrame(update);
 }
 
 function draw() {
@@ -653,11 +616,6 @@ function draw() {
     drawCar(player.x, player.y, player.color);
     obstacles.forEach(o => drawCar(o.x, o.y, o.color));
   }
-  // РИСУЕМ СВОЮ МАШИНУ ПОВЕРХ ВСЕГО
-  ctx.fillStyle = '#ff0000'; 
-  ctx.fillRect(player.x, player.y, player.width, player.height);
-  ctx.fillStyle = '#000';
-  ctx.fillRect(player.x + 8, player.y + 8, 14, 14); // стекло
 }
 
 function drawCar(x, y, color) {
@@ -696,17 +654,7 @@ function loop() {
   draw();
   requestAnimationFrame(loop);
 }
-    // УПРАВЛЕНИЕ ПАЛЬЦЕМ НА ТЕЛЕФОНЕ
-let touchX = null;
-  canvas.addEventListener('touchstart', e => touchX = e.touches[0].clientX);
-  canvas.addEventListener('touchmove', e => {
-    if(touchX!== null){
-          let diff = e.touches[0].clientX - touchX;
-          player.x += diff * 0.2;
-          touchX = e.touches[0].clientX;
-    }
-});
-canvas.addEventListener('touchend', () => touchX = null);
+
 </script>
 </body>
-</html>
+  </html>
