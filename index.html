@@ -455,6 +455,8 @@ document.getElementById('restartBtn').onclick = () => {
 };
 
 function update() {
+  player.width = 30;
+  player.height = 50;
   // СЧЕТЧИК ДИСТАНЦИИ
   distance += speed;
   document.getElementById('score').innerText = `Дистанция: ${Math.floor(distance)}/10000м`;
