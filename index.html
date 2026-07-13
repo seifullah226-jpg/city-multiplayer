@@ -459,6 +459,12 @@ function update() {
   distance += speed;
   document.getElementById('score').innerText = `Дистанция: ${Math.floor(distance)}/10000м`;
 
+// РИСУЕМ СВОЮ МАШИНУ
+  ctx.fillStyle = '#ff0000'; // красный цвет
+  ctx.fillRect(player.x, player.y, player.width, player.height);
+  ctx.fillStyle = '#000';
+  ctx.fillRect(player.x + 5, player.y + 5, 10, 10); // "окно"
+
 // ПРОВЕРКА ФИНИША
   if(distance >= 10000 && raceActive){
     raceActive = false;
