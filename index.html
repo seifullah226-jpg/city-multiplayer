@@ -132,7 +132,7 @@ let bestScore = localStorage.getItem('racingBest') || 0;
 let leaderboard = JSON.parse(localStorage.getItem('racingLeaderboard')) || [];
 
 // ФИНИШ ДИСТАНЦИИ
-const FINISH_DISTANCE = 10000; // км до финиша
+const FINISH_DISTANCE = 7000; // км до финиша
 const KM_PER_SPEED_UNIT = 0.05; // множитель, чтобы финиш достигался за разумное время
 let distanceKm = 0;
 let raceFinished = false;
@@ -180,8 +180,8 @@ const carStats = {
   car1: {name: 'Красная', color: 'red', baseSpeed: 18, baseSteer: 10, price: 0},
   car2: {name: 'Синяя', color: 'blue', baseSpeed: 20, baseSteer: 7, price: 0},
   car3: {name: 'Зелёная', color: 'lime', baseSpeed: 16, baseSteer: 14, price: 0},
-  car4: {name: 'Золотая', color: 'gold', baseSpeed: 25, baseSteer: 12, price: 1000},
-  car5: {name: 'Чёрная', color: 'black', baseSpeed: 22, baseSteer: 16, price: 1500}
+  car4: {name: 'Золотая', color: 'gold', baseSpeed: 25, baseSteer: 12, price: 700},
+  car5: {name: 'БМВ', color: 'black', baseSpeed: 22, baseSteer: 16, price: 600}
 };
 
 function getUpgradeCost(level) { return 50 + (level - 1) * 25; }
